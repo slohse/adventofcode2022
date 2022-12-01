@@ -43,5 +43,13 @@ fn main() {
     let mut input = String::new();
     f.read_to_string(&mut input).expect("something went wrong reading the file");
 
-    println!("Most calories: {}", calories_per_elf(&input).iter().max().unwrap());
+    let mut calories = calories_per_elf(&input);
+    calories.sort();
+
+    println!("Most calories: {}", calories.last().unwrap());
+
+    let top_three = &calories[calories.len() - 3..calories.len()];
+
+    println!("Top Three Calories: {}", top_three.iter().fold(0, |acc, x| acc + x));
+
 }
