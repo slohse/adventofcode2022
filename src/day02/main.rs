@@ -19,6 +19,14 @@ enum RPS {
     Scissors
 }
 
+#[derive(PartialEq, Clone, Copy)]
+enum Outcome {
+    Lose,
+    Draw,
+    Win
+}
+
+
 fn decrypt(input: char) -> Option<RPS> {
     match input {
         'A' | 'X' => Some(RPS::Rock),
@@ -28,6 +36,44 @@ fn decrypt(input: char) -> Option<RPS> {
             println!("decrypt got '{}'", input);
             None
         }
+    }
+}
+
+fn decrypt_outcome(input: char) -> Option<Outcome> {
+    match input {
+        'X' => Some(Outcome::Lose),
+        'Y' => Some(Outcome::Draw),
+        'Z' => Some(Outcome::Win),
+        _ => {
+            println!("decrypt_outcome got '{}'", input);
+            None
+        }
+    }
+}
+
+fn match_outcome(opponent: RPS, outcome: Outcome) -> RPS {
+    match opponent {
+        RPS::Rock => {
+            match outcome {
+                Outcome::Lose => RPS::Scissors,
+                Outcome::Draw => RPS::Rock,
+                Outcome::Win => RPS::Paper,
+            }
+        },
+        RPS::Paper => {
+            match outcome {
+                Outcome::Lose => RPS::Rock,
+                Outcome::Draw => RPS::Paper,
+                Outcome::Win => RPS::Scissors,
+            }
+        },
+        RPS::Scissors => {
+            match outcome {
+                Outcome::Lose => RPS::Paper,
+                Outcome::Draw => RPS::Scissors,
+                Outcome::Win => RPS::Rock,
+            }
+        },        
     }
 }
 
@@ -62,8 +108,20 @@ fn roundscore(input: &str) -> i64 {
     }
 }
 
-fn tournamentscore(input: &str) -> i64 {
-    input.lines().fold(0, |acc, x| acc + roundscore(x))
+fn roundscore2(input: &str) -> i64 {
+    if input.len() >= 3 {
+        let mut c = input.chars();
+        let opponent = decrypt(c.nth(0).unwrap()).unwrap();
+        let outcome = decrypt_outcome(c.nth(1).unwrap()).unwrap();
+        let me = match_outcome(opponent, outcome);
+        matchscore(opponent, me) + shapescore(me)
+    } else {
+        0
+    }
+}
+
+fn tournamentscore(input: &str, f: &dyn Fn(&str) -> i64) -> i64 {
+    input.lines().fold(0, |acc, x| acc + f(x))
 }
 
 
@@ -74,6 +132,7 @@ fn main() {
     let mut input = String::new();
     f.read_to_string(&mut input).expect("something went wrong reading the file");
 
-    println!("Tournament score: {}", tournamentscore(&input));
+    println!("Tournament score: {}", tournamentscore(&input, &roundscore));
+    println!("Part 2: {}", tournamentscore(&input, &roundscore2));
 
 }
