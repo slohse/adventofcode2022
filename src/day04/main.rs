@@ -17,40 +17,25 @@ struct Args {
 
 }
 
-fn parse_input(input: &str) -> Vec<((u64,u64),(u64,u64))> {
+fn parse_line(input: &str) -> ((u64,u64),(u64,u64)) {
     lazy_static! {
         static ref RE: Regex = Regex::new(r"^(\d+)-(\d+),(\d+)-(\d+)").unwrap();
     }
-    let mut pairs = Vec::new();
-    println!("input:");
-    print!("{}", input);
-    println!("-----------");
-    for cap in RE.captures_iter(input) {
-        pairs.push(((u64_or_bust(&cap[1]),
-                     u64_or_bust(&cap[2])),
-                    (u64_or_bust(&cap[3]),
-                     u64_or_bust(&cap[4]))));
-    }
-
-    pairs
+    let caps = RE.captures(input).unwrap();
+    ((u64_or_bust(caps.get(1).unwrap().as_str()),
+      u64_or_bust(caps.get(2).unwrap().as_str())),
+     (u64_or_bust(caps.get(3).unwrap().as_str()),
+      u64_or_bust(caps.get(4).unwrap().as_str())))
 }
 
 fn is_fully_contained(pair: ((u64,u64),(u64,u64))) -> bool {
-    let result = (pair.0.0 <= pair.1.0 && pair.0.1 >= pair.1.1) || (pair.1.0 <= pair.0.0 && pair.1.1 >= pair.0.1);
-    println!("({p00} <= {p10} && {p01} <= {p11}) || ({p10} <= {p00} && {p11} <= {p01}) => {r}",
-             p00 = pair.0.0,
-             p01 = pair.0.1,
-             p10 = pair.1.0,
-             p11 = pair.1.1,
-             r = result);
-
-    result
+    (pair.0.0 <= pair.1.0 && pair.0.1 >= pair.1.1) || (pair.1.0 <= pair.0.0 && pair.1.1 >= pair.0.1)
 }
 
-fn part1(pairs: &Vec<((u64,u64),(u64,u64))>) -> u64 {
+fn part1(input: &str) -> u64 {
     let mut count = 0;
-    for pair in pairs {
-        if is_fully_contained(*pair) {
+    for line in input.lines() {
+        if is_fully_contained(parse_line(line)) {
             count+= 1;
         }
     }
@@ -68,8 +53,6 @@ fn main() {
     let re = Regex::new(r"^(\d+)-(\d+),(\d+)-(\d+)").unwrap();
     assert!(re.is_match("2-4,6-8"));
 
-    let pairs = parse_input(&input);
-
-    println!("part 1: {}", part1(&pairs));
+    println!("part 1: {}", part1(&input));
 
 }
