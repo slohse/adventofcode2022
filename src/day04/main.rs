@@ -32,6 +32,12 @@ fn is_fully_contained(pair: ((u64,u64),(u64,u64))) -> bool {
     (pair.0.0 <= pair.1.0 && pair.0.1 >= pair.1.1) || (pair.1.0 <= pair.0.0 && pair.1.1 >= pair.0.1)
 }
 
+fn is_partially_contained(pair: ((u64,u64),(u64,u64))) -> bool {
+    // I'm pretty sure this can be simplified, but I'll let the compiler do that
+    ((pair.0.0 >= pair.1.0 && pair.0.0 <= pair.1.1) || (pair.0.1 >= pair.1.0 && pair.0.1 <= pair.1.1))
+    || ((pair.1.0 >= pair.0.0 && pair.1.0 <= pair.0.1) || (pair.1.1 >= pair.0.0 && pair.1.1 <= pair.0.1))
+}
+
 fn part1(input: &str) -> u64 {
     let mut count = 0;
     for line in input.lines() {
@@ -42,6 +48,18 @@ fn part1(input: &str) -> u64 {
 
     count
 }
+
+fn part2(input: &str) -> u64 {
+    let mut count = 0;
+    for line in input.lines() {
+        if is_partially_contained(parse_line(line)) {
+            count+= 1;
+        }
+    }
+
+    count
+}
+
 
 fn main() {
     let args = Args::parse();
@@ -54,5 +72,6 @@ fn main() {
     assert!(re.is_match("2-4,6-8"));
 
     println!("part 1: {}", part1(&input));
+    println!("part 2: {}", part2(&input));
 
 }
