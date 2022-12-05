@@ -73,6 +73,17 @@ fn run_crane(stacks: &mut Vec<RefCell<Vec<char>>>, instructions: &str) {
     }
 }
 
+fn run_crane_pt2(stacks: &mut Vec<RefCell<Vec<char>>>, instructions: &str) {
+    for line in instructions.lines() {
+        let (num, from, to) = parse_instruction(line);
+        //let fs: &mut Vec<char> = *(stacks[(from - 1) as usize].borrow_mut());
+        let fs = &mut *(stacks[(from - 1) as usize].borrow_mut());
+        let ts = &mut *(stacks[(to - 1) as usize].borrow_mut());
+        let mut split = fs.split_off(fs.len() - (num as usize) );
+        ts.append(&mut split);
+    }
+}
+
 fn print_tops(stacks: & Vec<RefCell<Vec<char>>>) {
     for stack in stacks {
         let s = &*stack.borrow();
@@ -90,7 +101,14 @@ fn main() {
 
     let inputs = split_stacks_and_instructions(&input);
     let mut stacks = parse_stacks(inputs.get(0).unwrap());
+    let mut part2_stacks = stacks.clone();
     run_crane(&mut stacks, inputs.get(1).unwrap());
 
+    print!("part 1: ");
     print_tops(&stacks);
+
+    run_crane_pt2(&mut part2_stacks, inputs.get(1).unwrap());
+
+    print!("part 2: ");
+    print_tops(&part2_stacks);
 }
