@@ -4,6 +4,7 @@ use clap::Parser;
 use std::path::PathBuf;
 use regex::Regex;
 use lazy_static::lazy_static;
+use std::cell::RefCell;
 use crate::utils::u64_or_bust;
 
 #[path = "../utils.rs"] mod utils;
@@ -21,7 +22,7 @@ fn split_stacks_and_instructions(input: &str) -> Vec<&str> {
     input.split("\n\n").collect()
 }
 
-fn parse_stacks(input: &str) -> Vec<Vec<char>> {
+fn parse_stacks(input: &str) -> Vec<RefCell<Vec<char>>> {
     lazy_static! {
         static ref LAST_STACKNO: Regex = Regex::new(r"(\d+)\s*$").unwrap();
     }
@@ -29,7 +30,7 @@ fn parse_stacks(input: &str) -> Vec<Vec<char>> {
     let stackno = LAST_STACKNO.captures(bottom_up.next().unwrap()).unwrap();
     let num_stacks = u64_or_bust(stackno.get(1).unwrap().as_str());
 
-    let mut stacks: Vec<Vec<char>> = vec![Vec::new(); num_stacks as usize];
+    let mut stacks: Vec<RefCell<Vec<char>>> = vec![RefCell::new(Vec::new()); num_stacks as usize];
 
     for line in bottom_up {
         let chars: Vec<char> = line.chars().collect();
@@ -37,7 +38,7 @@ fn parse_stacks(input: &str) -> Vec<Vec<char>> {
             match chars.get(i * 4 + 1) {
                 Some(c) => {
                     if c.is_ascii_alphabetic() {
-                        stack.push(*c)
+                        stack.get_mut().push(*c)
                     }
                 },
                 None => ()
@@ -60,15 +61,24 @@ fn parse_instruction(input: &str) -> (u64, u64, u64) {
     (num, from, to)
 }
 
-fn run_crane(stacks: &mut Vec<Vec<char>>, instructions: &str) {
+fn run_crane(stacks: &mut Vec<RefCell<Vec<char>>>, instructions: &str) {
     for line in instructions.lines() {
         let (num, from, to) = parse_instruction(line);
-        let fs = &mut stacks[(from - 1) as usize];
-        let ts = &mut stacks[(to - 1) as usize];
+        //let fs: &mut Vec<char> = *(stacks[(from - 1) as usize].borrow_mut());
+        let fs = &mut *(stacks[(from - 1) as usize].borrow_mut());
+        let ts = &mut *(stacks[(to - 1) as usize].borrow_mut());
         for _ in 0..num {
             ts.push(fs.pop().unwrap());
         }
     }
+}
+
+fn print_tops(stacks: & Vec<RefCell<Vec<char>>>) {
+    for stack in stacks {
+        let s = &*stack.borrow();
+        print!("{}", s[s.len() -1]);
+    }
+    println!("");
 }
 
 fn main() {
@@ -81,5 +91,6 @@ fn main() {
     let inputs = split_stacks_and_instructions(&input);
     let mut stacks = parse_stacks(inputs.get(0).unwrap());
     run_crane(&mut stacks, inputs.get(1).unwrap());
-    println!("{:?}", stacks);
+
+    print_tops(&stacks);
 }
