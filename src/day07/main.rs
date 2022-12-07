@@ -70,7 +70,7 @@ fn parse_ls_line(input: &str) -> (FsObj, &str) {
 }
 
 
-fn parse_input(input: &str) {
+fn parse_input(input: &str) -> HashMap<PathBuf, u64> {
     let mut cur_dir = PathBuf::new();
     let mut sizes: HashMap<PathBuf, u64> = HashMap::new();
 
@@ -79,7 +79,7 @@ fn parse_input(input: &str) {
         if i.starts_with('$') {
             let (c, args) = parse_command(i);
             let cmd = c.unwrap();
-            println!("is command: {:?} {}", cmd, args.unwrap());
+            //println!("is command: {:?} {}", cmd, args.unwrap());
             match cmd {
                 CMD::CD => {
                     let path = args.unwrap();
@@ -91,7 +91,7 @@ fn parse_input(input: &str) {
                             sizes.insert(cur_dir.clone(), 0);
                         }
                     }
-                    println!("cur_dir: {}", cur_dir.to_str().unwrap());
+                    //println!("cur_dir: {}", cur_dir.to_str().unwrap());
                 },
                 CMD::LS => {
                     while let Some(next) = lines.peek() {
@@ -103,7 +103,7 @@ fn parse_input(input: &str) {
                             if let FsObj::File(size) = fstype {
                                 *sizes.get_mut(&cur_dir).unwrap() += size;
                             }
-                            println!("content: {:?}, {}", fstype, name);
+                            //println!("content: {:?}, {}", fstype, name);
                         }
                     }
                 }
@@ -119,16 +119,20 @@ fn parse_input(input: &str) {
     for dir in sizes_clone.keys().sorted().rev() {
         if let Some(parent) = dir.parent() {
             *sizes.get_mut(parent).unwrap() += sizes[dir];
-        } else {
-            println!("{} has no parent", dir.to_str().unwrap());
         }
     }
     
-    println!("------------");
-    println!("dir sizes:");
-    for dir in sizes.keys().sorted() {
-        println!("{}: {}", dir.to_str().unwrap(), sizes[dir])
+    sizes
+}
+
+fn part1(dirs: &HashMap<PathBuf, u64>) -> u64 {
+    let mut sum: u64 = 0;
+    for (_, size) in dirs {
+        if *size <= 100000 {
+            sum += *size;
+        }
     }
+    sum
 }
 
 fn main() {
@@ -138,5 +142,7 @@ fn main() {
     let mut input = String::new();
     f.read_to_string(&mut input).expect("something went wrong reading the file");
 
-    parse_input(&input);
+    let dirs = parse_input(&input);
+
+    println!("part 1: {}", part1(&dirs));
 }
