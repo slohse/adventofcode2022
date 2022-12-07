@@ -135,6 +135,22 @@ fn part1(dirs: &HashMap<PathBuf, u64>) -> u64 {
     sum
 }
 
+fn part2(dirs: &HashMap<PathBuf, u64>) -> u64  {
+    let total_disk: u64 = 70000000;
+    let mut root = PathBuf::new();
+    root.push("/");
+    let total_used = dirs[&root];
+    let current_free = total_disk - total_used;
+    let needed = 30000000 - current_free;
+    let mut best = total_used;
+    for value in dirs.values() {
+        if *value >= needed && *value < best {
+            best = *value;
+        }
+    }
+    best
+}
+
 fn main() {
     let args = Args::parse();
 
@@ -145,4 +161,5 @@ fn main() {
     let dirs = parse_input(&input);
 
     println!("part 1: {}", part1(&dirs));
+    println!("part 2: {}", part2(&dirs));
 }
