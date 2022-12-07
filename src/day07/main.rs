@@ -99,7 +99,7 @@ fn parse_input(input: &str) -> HashMap<PathBuf, u64> {
                             break;
                         } else {
                             let content = lines.next().unwrap();
-                            let (fstype, name) = parse_ls_line(content);
+                            let (fstype, _) = parse_ls_line(content);
                             if let FsObj::File(size) = fstype {
                                 *sizes.get_mut(&cur_dir).unwrap() += size;
                             }
