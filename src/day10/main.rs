@@ -80,6 +80,42 @@ fn part1(input: &str) -> i64 {
     sum
 }
 
+fn part2(input: &str) {
+    let mut xreg: i64 = 1;
+    let mut cycle: i64 = 0;
+    let mut output = String::new();
+    for line in input.lines() {
+        if cycle % 40 == 0 {
+            output.push('\n');
+        }
+        if cycle % 40 >= xreg - 1 && cycle % 40 <= xreg + 1 {
+            output.push('#');
+        } else {
+            output.push('.');
+        }
+        let cmd = parse_cmd(line);
+        match cmd {
+            CMD::NOOP => {
+                cycle += 1
+            }
+            CMD::ADDX(i) => {
+                cycle += 1;
+                if cycle % 40 == 0 {
+                    output.push('\n');
+                }
+                if cycle % 40 >= xreg - 1 && cycle % 40 <= xreg + 1 {
+                    output.push('#');
+                } else {
+                    output.push('.');
+                }
+                xreg += i;
+                cycle += 1;
+            }
+        }
+    }
+    print!("{}", output);
+}
+
 
 fn main() {
     let args = Args::parse();
@@ -89,5 +125,5 @@ fn main() {
     f.read_to_string(&mut input).expect("something went wrong reading the file");
 
     println!("part 1: {}", part1(&input));
-
+    part2(&input);
 }
