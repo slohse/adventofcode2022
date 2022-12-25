@@ -170,6 +170,35 @@ fn part1(initial_state: &HashSet<(i64, i64)>) -> i64 {
     empty_tiles
 }
 
+fn part2(initial_state: &HashSet<(i64, i64)>) -> i64 {
+    let mut dir_prios = VecDeque::from([Direction::North, Direction::South, Direction::West, Direction::East]);
+    let mut state = initial_state.clone();
+    let mut moves = 1;
+
+    loop {
+        let planned_moves = &plan_moves(&state, &dir_prios);
+        let mut no_elf_moves = true;
+        for (to, from) in planned_moves {
+            if from.len() > 1 {
+                continue
+            }
+            if from[0] != *to {
+                no_elf_moves = false;
+                break;
+            }
+        }
+        if no_elf_moves {
+            break;
+        }
+        state = execute_moves(planned_moves);
+        moves += 1;
+        let old_prio1 = dir_prios.pop_front().unwrap();
+        dir_prios.push_back(old_prio1);
+    }
+
+    moves
+}
+
 fn main() {
     let args = Args::parse();
 
@@ -180,4 +209,5 @@ fn main() {
     let positions = parse_positions(&input);
 
     println!("part 1: {}", part1(&positions));
+    println!("part 2: {}", part2(&positions));
 }
