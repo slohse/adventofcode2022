@@ -5,7 +5,6 @@ use std::path::PathBuf;
 use std::collections::{HashSet, VecDeque};
 use std::collections::HashMap;
 use std::cmp;
-use crate::utils::i64_or_bust;
 
 #[path = "../utils.rs"] mod utils;
 
@@ -18,6 +17,7 @@ struct Args {
 
 }
 
+#[derive(Debug, PartialEq, Eq, Hash)]
 enum Direction {
     North,
     East,
@@ -29,8 +29,10 @@ fn parse_positions(input: &str) -> HashSet<(i64, i64)> {
     let mut positions: HashSet<(i64, i64)> = HashSet::new();
 
     for (y, line) in input.lines().enumerate() {
+        //println!("{}", line);
         for (x, c) in line.chars().enumerate() {
             if c == '#' {
+                //println!("inserting at ({}, {})", x, y);
                 positions.insert((x as i64, y as i64));
             }
         }
@@ -39,50 +41,45 @@ fn parse_positions(input: &str) -> HashSet<(i64, i64)> {
     positions
 }
 
-fn new_pos_if_clear(pos: (i64, i64),
-                    dir: &Direction,
-                    map: &HashSet<(i64, i64)>) -> Option<(i64, i64)> {
-    match dir {
-        Direction::North => {
-            if !map.contains(&(pos.0 - 1, pos.1 - 1)) &&
-                !map.contains(&(pos.0, pos.1 - 1)) &&
-                !map.contains(&(pos.0 + 1, pos.1 - 1)) {
-                    return Some((pos.0, pos.1 - 1));
-            }
-        },
-        Direction::East => {
-            if !map.contains(&(pos.0 + 1, pos.1 - 1)) &&
-                !map.contains(&(pos.0 + 1, pos.1)) &&
-                !map.contains(&(pos.0 + 1, pos.1 + 1)) {
-                    return Some((pos.0 + 1, pos.1));
-            }
-        },
-        Direction::South => {
-            if !map.contains(&(pos.0 - 1, pos.1 + 1)) &&
-                !map.contains(&(pos.0, pos.1 + 1)) &&
-                !map.contains(&(pos.0 + 1, pos.1 + 1)) {
-                    return Some((pos.0, pos.1 + 1));
-            }
-        },
-        Direction::West => {
-            if !map.contains(&(pos.0 - 1, pos.1 - 1)) &&
-                !map.contains(&(pos.0 - 1, pos.1)) &&
-                !map.contains(&(pos.0 - 1, pos.1 + 1)) {
-                    return Some((pos.0 - 1, pos.1));
-            }
-        },
+fn possible_directions(pos: (i64, i64),
+                       map: &HashSet<(i64, i64)>) -> HashMap<Direction, (i64, i64)> {
+    let mut directions = HashMap::new();
+    if !map.contains(&(pos.0 - 1, pos.1 - 1)) &&
+        !map.contains(&(pos.0, pos.1 - 1)) &&
+        !map.contains(&(pos.0 + 1, pos.1 - 1)) {
+        directions.insert(Direction::North, (pos.0, pos.1 - 1));
     }
-    None
+    if !map.contains(&(pos.0 + 1, pos.1 - 1)) &&
+        !map.contains(&(pos.0 + 1, pos.1)) &&
+        !map.contains(&(pos.0 + 1, pos.1 + 1)) {
+        directions.insert(Direction::East, (pos.0 + 1, pos.1));
+    }
+    if !map.contains(&(pos.0 - 1, pos.1 + 1)) &&
+        !map.contains(&(pos.0, pos.1 + 1)) &&
+        !map.contains(&(pos.0 + 1, pos.1 + 1)) {
+        directions.insert(Direction::South, (pos.0, pos.1 + 1));
+    }
+    if !map.contains(&(pos.0 - 1, pos.1 - 1)) &&
+        !map.contains(&(pos.0 - 1, pos.1)) &&
+        !map.contains(&(pos.0 - 1, pos.1 + 1)) {
+        directions.insert(Direction::West, (pos.0 - 1, pos.1));
+    }
+    directions
 }
 
 fn decide_move(pos: (i64, i64),
                map: &HashSet<(i64, i64)>,
                priority: &VecDeque<Direction>) -> (i64, i64) {
+    let possible_moves = possible_directions(pos, map);
+    if possible_moves.len() == 4 || possible_moves.len() == 0 {
+        return pos;
+    }
     for dir in priority {
-        if let Some(new_pos) = new_pos_if_clear(pos, dir, map) {
-            return new_pos;
+        if let Some(mv) = possible_moves.get(dir) {
+            return *mv;
         }
     }
+    // this is be redundant, but whatever
     return pos;
 }
 
@@ -119,10 +116,11 @@ fn execute_moves(moves: &HashMap<(i64, i64), Vec<(i64, i64)>>) -> HashSet<(i64, 
 }
 
 fn bounding_box(map: &HashSet<(i64, i64)>) -> ((i64, i64), (i64, i64)) {
-    let mut min_x: i64 = 0;
-    let mut max_x: i64 = 0;
-    let mut min_y: i64 = 0;
-    let mut max_y: i64 = 0;
+    let some_point = map.iter().next().unwrap();
+    let mut min_x: i64 = some_point.0;
+    let mut max_x: i64 = some_point.1;
+    let mut min_y: i64 = some_point.0;
+    let mut max_y: i64 = some_point.1;
 
     for elf in map {
         min_x = cmp::min(min_x, elf.0);
@@ -134,20 +132,40 @@ fn bounding_box(map: &HashSet<(i64, i64)>) -> ((i64, i64), (i64, i64)) {
     ((min_x, min_y), (max_x, max_y))
 }
 
+fn print_state(map: &HashSet<(i64, i64)>) {
+    let field = bounding_box(&map);
+    println!("bounding box: {:?}", field);
+    for line in field.0.1..(field.1.1 + 1) {
+        for row in field.0.0..(field.1.0 + 1) {
+            let c = if map.contains(&(row, line)) { '#' } else { '.' };
+            print!("{}", c);
+        }
+        println!();
+    }
+    println!();
+}
+
 fn part1(initial_state: &HashSet<(i64, i64)>) -> i64 {
     let mut dir_prios = VecDeque::from([Direction::North, Direction::South, Direction::West, Direction::East]);
     let mut state = initial_state.clone();
-    for _ in 1..10 {
+    //print_state(&state);
+    for _ in 0..10 {
+        //println!("directions priority: {:?}", dir_prios);
         state = execute_moves(&plan_moves(&state, &dir_prios));
+        //print_state(&state);
         let old_prio1 = dir_prios.pop_front().unwrap();
         dir_prios.push_back(old_prio1);
     }
 
     let field = bounding_box(&state);
-    let x_size = field.1.0 - field.0.0;
-    let y_size = field.1.1 - field.0.1;
+    //println!("bounding box: {:?}", field);
+    let x_size = (field.1.0 - field.0.0) + 1;
+    let y_size = (field.1.1 - field.0.1) + 1;
+    //println!("x size: {}, y size: {}", x_size, y_size);
     let field_size = x_size * y_size;
-    let empty_tiles = field_size - state.len() as i64;
+    let num_elves = state.len() as i64;
+    //println!("field size: {}, elves: {}", field_size, num_elves);
+    let empty_tiles = field_size - num_elves;
 
     empty_tiles
 }
